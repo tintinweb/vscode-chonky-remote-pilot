@@ -1,0 +1,50 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+    "files.exclude": {
+        "out": false, // set this to true to hide the "out" folder with the compiled JS files
+        "dist": false // set this to true to hide the "dist" folder with the compiled JS files
+    },
+    "search.exclude": {
+        "out": true, // set this to false to include "out" folder in search results
+        "dist": true // set this to false to include "dist" folder in search results
+    },
+    // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
+    "typescript.tsc.autoDetect": "off",
+    "chonky.primers.repositories": [
+        {
+            "id": "repo_c2ti2v",
+            "name": "security-primers",
+            "type": "filesystem",
+            "url": "/Users/tintin/workspace/ai/security-primers",
+            "enabled": true
+        },
+        {
+            "id": "base-security-primers",
+            "name": "Base Security Primers",
+            "type": "built-in",
+            "url": "base-security-primers",
+            "enabled": false
+        },
+        {
+            "id": "professional-security-primers",
+            "name": "Professional Security Primers",
+            "type": "built-in",
+            "url": "professional-security-primers",
+            "enabled": false
+        },
+        {
+            "id": "aws-api-security-primers",
+            "name": "Diligence Internal",
+            "type": "api",
+            "url": "https://55okalv6y4ymmtuz3fkzt6f2g40rcnks.lambda-url.eu-north-1.on.aws",
+            "enabled": true
+        },
+        {
+            "id": "diligence-security-primers",
+            "name": "Base Security Primers",
+            "type": "built-in",
+            "url": "diligence-security-primers",
+            "enabled": true
+        }
+    ]
+}
