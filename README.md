@@ -20,6 +20,12 @@ Multi-transport chat bridge for VS Code Chat. Control your AI coding assistant r
 - 🔄 **Continuous Loop** - Maintains an active chat session until cancelled
 - 🔒 **Secure Storage** - Credentials stored securely in VS Code
 
+
+
+https://github.com/user-attachments/assets/c9fea99c-0fc3-4daa-aa2e-323d77698515
+
+
+
 ## Setup
 
 ### Telegram
