@@ -1,5 +1,11 @@
 import * as vscode from 'vscode';
-import { telegramProvider, ExternalMessage } from '../telegram/TelegramProvider';
+import { transportManager } from '../transports/TransportManager';
+import { telegramProvider } from '../transports/TelegramProvider';
+import { whatsappProvider } from '../transports/WhatsAppProvider';
+import { slackProvider } from '../transports/SlackProvider';
+import { discordProvider } from '../transports/DiscordProvider';
+import { ExternalMessage } from '../transports/ITransportProvider';
+import { challengeAuth } from '../auth/ChallengeAuth';
 
 interface RemoteChatInput {
   response?: string;
@@ -7,9 +13,26 @@ interface RemoteChatInput {
 
 // Will be set by extension.ts
 export let secretStorage: vscode.SecretStorage | null = null;
+export let globalStoragePath: string | null = null;
 
 export function setSecretStorage(storage: vscode.SecretStorage) {
   secretStorage = storage;
+}
+
+export function setGlobalStoragePath(path: string) {
+  globalStoragePath = path;
+}
+
+// Initialize transport manager with providers
+let initialized = false;
+function ensureInitialized() {
+  if (!initialized) {
+    transportManager.register(telegramProvider);
+    transportManager.register(whatsappProvider);
+    transportManager.register(slackProvider);
+    transportManager.register(discordProvider);
+    initialized = true;
+  }
 }
 
 export class RemoteChatTool implements vscode.LanguageModelTool<RemoteChatInput> {
@@ -22,7 +45,10 @@ export class RemoteChatTool implements vscode.LanguageModelTool<RemoteChatInput>
     const { response } = options.input;
     
     if (response && this.lastMessage) {
-      // Show the request we're responding to and our response
+      const transportIcon = this.lastMessage.transport === 'telegram' ? '📱' 
+        : this.lastMessage.transport === 'whatsapp' ? '💬' 
+        : this.lastMessage.transport === 'slack' ? '💼' 
+        : this.lastMessage.transport === 'discord' ? '🎮' : '🔗';
       const requestPreview = this.lastMessage.content.length > 50 
         ? this.lastMessage.content.substring(0, 50) + '...' 
         : this.lastMessage.content;
@@ -30,7 +56,7 @@ export class RemoteChatTool implements vscode.LanguageModelTool<RemoteChatInput>
         ? response.substring(0, 80) + '...' 
         : response;
       return {
-        invocationMessage: `🧑‍✈️🍣 @${this.lastMessage.username}: "${requestPreview}"\n   ↳ "${responsePreview}"`,
+        invocationMessage: `🧑‍✈️🍣 ${transportIcon} @${this.lastMessage.username}: "${requestPreview}"\n   ↳ "${responsePreview}"`,
       };
     }
     
@@ -51,9 +77,11 @@ export class RemoteChatTool implements vscode.LanguageModelTool<RemoteChatInput>
     token: vscode.CancellationToken
   ): Promise<vscode.LanguageModelToolResult> {
     const { response } = options.input;
+    
+    ensureInitialized();
 
-    // Auto-connect if not connected
-    if (!telegramProvider.isConnected) {
+    // Auto-connect transports if not connected
+    if (!transportManager.isConnected) {
       if (!secretStorage) {
         return {
           content: [
@@ -65,27 +93,68 @@ export class RemoteChatTool implements vscode.LanguageModelTool<RemoteChatInput>
         };
       }
 
+      challengeAuth.clearOnConnect();
+      let anyConnected = false;
+
+      // Try connecting Telegram
       const botToken = await secretStorage.get('telegram-bot-token');
-      if (!botToken) {
-        return {
-          content: [
-            new vscode.LanguageModelTextPart(JSON.stringify({
-              error: true,
-              message: 'Telegram bot token not configured. Run command: "Chonky RemotePilot: Configure Telegram"'
-            }))
-          ]
-        };
+      if (botToken) {
+        try {
+          await telegramProvider.connect({ token: botToken });
+          console.log('[RemoteChat] Auto-connected to Telegram');
+          anyConnected = true;
+        } catch (error) {
+          console.error('[RemoteChat] Failed to connect to Telegram:', error);
+        }
       }
 
-      try {
-        await telegramProvider.connect(botToken);
-        console.log('[RemoteChat] Auto-connected to Telegram');
-      } catch (error) {
+      // Try connecting WhatsApp
+      if (globalStoragePath) {
+        const whatsappAuthPath = `${globalStoragePath}/whatsapp-auth`;
+        const fs = await import('fs');
+        // Check if whatsapp auth folder exists (has been configured before)
+        if (fs.existsSync(whatsappAuthPath)) {
+          try {
+            await whatsappProvider.connect({ authPath: whatsappAuthPath });
+            console.log('[RemoteChat] Auto-connected to WhatsApp');
+            anyConnected = true;
+          } catch (error) {
+            console.error('[RemoteChat] Failed to connect to WhatsApp:', error);
+          }
+        }
+      }
+
+      // Try connecting Slack
+      const slackBotToken = await secretStorage.get('slack-bot-token');
+      const slackAppToken = await secretStorage.get('slack-app-token');
+      if (slackBotToken && slackAppToken) {
+        try {
+          await slackProvider.connect({ botToken: slackBotToken, appToken: slackAppToken });
+          console.log('[RemoteChat] Auto-connected to Slack');
+          anyConnected = true;
+        } catch (error) {
+          console.error('[RemoteChat] Failed to connect to Slack:', error);
+        }
+      }
+
+      // Try connecting Discord
+      const discordToken = await secretStorage.get('discord-bot-token');
+      if (discordToken) {
+        try {
+          await discordProvider.connect({ token: discordToken });
+          console.log('[RemoteChat] Auto-connected to Discord');
+          anyConnected = true;
+        } catch (error) {
+          console.error('[RemoteChat] Failed to connect to Discord:', error);
+        }
+      }
+
+      if (!anyConnected) {
         return {
           content: [
             new vscode.LanguageModelTextPart(JSON.stringify({
               error: true,
-              message: `Failed to connect to Telegram: ${error}`
+              message: 'No transports configured. Run "Chonky RemotePilot: Configure [Telegram/WhatsApp/Slack/Discord]"'
             }))
           ]
         };
@@ -95,32 +164,36 @@ export class RemoteChatTool implements vscode.LanguageModelTool<RemoteChatInput>
     // If response provided, send it to last chat
     if (response && this.lastMessage) {
       try {
-        await telegramProvider.sendMessage(
+        await transportManager.sendMessage(
           this.lastMessage.chatId,
+          this.lastMessage.transport,
           response,
           this.lastMessage.id
         );
+        console.log(`[RemoteChat] Sent response to ${this.lastMessage.transport}:${this.lastMessage.chatId}`);
       } catch (error) {
         console.error('[RemoteChat] Failed to send response:', error);
+        vscode.window.showErrorMessage(`Failed to send message: ${error}`);
       }
     }
 
-    // Wait for next incoming message
+    // Wait for next incoming message from any transport
     try {
       console.log('[RemoteChat] Waiting for next message...');
-      this.lastMessage = await telegramProvider.waitForMessage(token);
+      this.lastMessage = await transportManager.waitForMessage(token);
 
       // Show "typing" indicator while agent processes
-      await telegramProvider.sendTyping(this.lastMessage.chatId);
+      await transportManager.sendTyping(this.lastMessage.chatId, this.lastMessage.transport);
 
       const msgContent = this.lastMessage.content;
       const from = this.lastMessage.username || this.lastMessage.chatId;
+      const transport = this.lastMessage.transport;
       
       return {
         content: [
           new vscode.LanguageModelTextPart(
 `📩 REMOTE USER MESSAGE
-From: @${from}
+From: @${from} (${transport})
 Message: "${msgContent}"
 
 ⚠️ IMMEDIATE ACTION REQUIRED: 

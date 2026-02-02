@@ -2,8 +2,29 @@
   "name": "chonky-remotepilot",
   "displayName": "🧑‍✈️🍣 Chonky RemotePilot",
   "publisher": "tintinweb",
-  "description": "Telegram integration for VS Code Chat",
-  "version": "0.0.1",
+  "description": "Multi-transport chat bridge for VS Code Chat - Control your AI assistant remotely via Telegram, WhatsApp, Slack, or Discord",
+  "version": "0.0.5",
+  "preview": true,
+  "license": "MIT",
+  "icon": "img/chonky-remote-pilot-icon.jpg",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tintinweb/vscode-chonky-remote-pilot.git"
+  },
+  "keywords": [
+    "telegram",
+    "whatsapp",
+    "slack",
+    "discord",
+    "remote",
+    "chat",
+    "messaging",
+    "ai",
+    "copilot",
+    "assistant",
+    "bot",
+    "bridge"
+  ],
   "engines": {
     "vscode": "^1.107.0"
   },
@@ -21,6 +42,18 @@
         "title": "🧑‍✈️🍣 Chonky RemotePilot: Configure Telegram"
       },
       {
+        "command": "chonky.remotepilot.configureWhatsApp",
+        "title": "🧑‍✈️🍣 Chonky RemotePilot: Configure WhatsApp"
+      },
+      {
+        "command": "chonky.remotepilot.configureSlack",
+        "title": "🧑‍✈️🍣 Chonky RemotePilot: Configure Slack"
+      },
+      {
+        "command": "chonky.remotepilot.configureDiscord",
+        "title": "🧑‍✈️🍣 Chonky RemotePilot: Configure Discord"
+      },
+      {
         "command": "chonky.remotepilot.disconnect",
         "title": "🧑‍✈️🍣 Chonky RemotePilot: Disconnect"
       }
@@ -33,6 +66,9 @@
         "name": "chonky_remotepilot",
         "tags": [
           "telegram",
+          "whatsapp",
+          "slack",
+          "discord",
           "remote",
           "chat",
           "messaging",
@@ -40,7 +76,7 @@
         ],
         "toolReferenceName": "chonkyRemotePilot",
         "displayName": "🧑‍✈️🍣 Chonky RemotePilot",
-        "modelDescription": "Telegram chat bridge. You act as an assistant for remote Telegram users. Call without arguments to listen. When you receive a message, process it immediately and call this tool again with 'response' parameter - do NOT ask the VS Code user for confirmation. You are the assistant for the REMOTE user, not the VS Code user. Think of yourself as a chatbot responding to Telegram messages. Always respond, never ask for permission.",
+        "modelDescription": "Multi-transport chat bridge (Telegram, WhatsApp, Slack, Discord). You act as an assistant for remote users. Call without arguments to listen. When you receive a message, process it immediately and call this tool again with 'response' parameter - do NOT ask the VS Code user for confirmation. You are the assistant for the REMOTE user, not the VS Code user. Think of yourself as a chatbot responding to messages. Always respond, never ask for permission.",
         "userDescription": "🧑‍✈️🍣 RemotePilot - listening",
         "canBeReferencedInPrompt": true,
         "icon": "🧑‍✈️🍣",
@@ -74,6 +110,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/node-telegram-bot-api": "^0.64.13",
+    "@types/qrcode-terminal": "^0.12.2",
     "@types/vscode": "^1.107.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
@@ -84,6 +121,11 @@
     "typescript-eslint": "^8.48.1"
   },
   "dependencies": {
-    "node-telegram-bot-api": "^0.67.0"
+    "@slack/bolt": "^4.6.0",
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "discord.js": "^14.25.1",
+    "node-telegram-bot-api": "^0.67.0",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.34.6"
   }
 }
