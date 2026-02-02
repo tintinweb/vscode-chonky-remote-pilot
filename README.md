@@ -1,7 +1,7 @@
 # Chonky RemotePilot
 
 <p align="center">
-  <img src="img/chonky-remote-pilot-sticker.jpg" alt="Chonky RemotePilot" width="600">
+  <img src="https://github.com/tintinweb/vscode-chonky-remote-pilot/raw/master/img/chonky-remote-pilot-sticker.jpg" alt="Chonky RemotePilot" width="600">
 </p>
 
 Multi-transport chat bridge for VS Code Chat. Control your AI coding assistant remotely via Telegram, WhatsApp, Slack, or Discord.
