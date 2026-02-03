@@ -22,7 +22,8 @@ Multi-transport chat bridge for VS Code Chat. Control your AI coding assistant r
 
 
 
-https://github.com/user-attachments/assets/c9fea99c-0fc3-4daa-aa2e-323d77698515
+https://github.com/user-attachments/assets/26659826-6d68-49d4-ae12-8143ff97a71e
+
 
 
 
