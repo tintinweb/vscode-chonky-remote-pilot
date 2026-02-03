@@ -39,20 +39,33 @@ export class TransportManager {
 
     // Enable channel: "enable #channel-name" or "enable channelId"
     if (command === 'enable' && parts.length >= 2) {
-      const channelRef = parts.slice(1).join(' ').replace(/^#/, '');
-      const mode = parts[2] as 'all' | 'mentions' | 'trusted-only' || 'mentions';
+      const channelRef = parts[1].replace(/^#/, '');
+      const mode = (parts[2] as 'all' | 'mentions' | 'trusted-only') || 'mentions';
+      
+      // Try to find channel by name or use as ID directly
+      const foundChannel = challengeAuth.findChannelByName(msg.transport, channelRef);
+      const channelId = foundChannel?.channelId || channelRef;
+      const channelName = foundChannel?.channelName || channelRef;
       
       challengeAuth.authorizeChannel(
         msg.transport,
-        channelRef, // This would be channelId in real usage
-        channelRef,
+        channelId,
         msg.userId,
+        channelName,
         mode
       );
-      await transport.sendMessage(
-        msg.chatId,
-        `✅ Channel "${channelRef}" enabled in ${mode} mode.\n\nModes:\n• \`all\` - respond to everyone\n• \`mentions\` - only when @mentioned\n• \`trusted-only\` - only trusted users`
-      );
+      
+      if (foundChannel) {
+        await transport.sendMessage(
+          msg.chatId,
+          `✅ Channel "${channelName}" enabled in ${mode} mode.\n\nModes:\n• all - respond to everyone\n• mentions - only when @mentioned\n• trusted-only - only trusted users`
+        );
+      } else {
+        await transport.sendMessage(
+          msg.chatId,
+          `✅ Channel "${channelRef}" enabled in ${mode} mode.\n\n⚠️ Note: Channel not found in recent messages. Make sure the bot can see messages in this channel.\n\nModes:\n• all - respond to everyone\n• mentions - only when @mentioned\n• trusted-only - only trusted users`
+        );
+      }
       return true;
     }
 
@@ -72,7 +85,7 @@ export class TransportManager {
     if (command === 'channels' || command === 'list') {
       const channels = challengeAuth.getAuthorizedChannels(msg.transport);
       if (channels.length === 0) {
-        await transport.sendMessage(msg.chatId, '📋 No channels enabled yet.\n\nUse `enable #channel-name` to enable a channel.');
+        await transport.sendMessage(msg.chatId, '📋 No channels enabled yet.\n\nUse "enable channel-name" to enable a channel.');
       } else {
         const list = channels.map(c => `• ${c.channelName || c.channelId} (${c.mode})`).join('\n');
         await transport.sendMessage(msg.chatId, `📋 *Enabled Channels:*\n\n${list}`);
@@ -130,14 +143,14 @@ export class TransportManager {
       await transport.sendMessage(msg.chatId, 
         `🤖 *Admin Commands*\n\n` +
         `*Channels:*\n` +
-        `• \`enable #channel [mode]\` - Enable channel\n` +
+        `• enable channel [mode] - Enable channel\n` +
         `  Modes: all, mentions (default), trusted-only\n` +
-        `• \`disable #channel\` - Disable channel\n` +
-        `• \`channels\` - List enabled channels\n\n` +
+        `• disable channel - Disable channel\n` +
+        `• channels - List enabled channels\n\n` +
         `*Users:*\n` +
-        `• \`trusted\` - List trusted users\n` +
-        `• \`revoke @user\` - Remove trusted user\n\n` +
-        `• \`help\` - Show this message`
+        `• trusted - List trusted users\n` +
+        `• revoke @user - Remove trusted user\n\n` +
+        `• help - Show this message`
       );
       return true;
     }
@@ -181,13 +194,16 @@ export class TransportManager {
       return;
     }
 
-    // For group messages: Check permission
+    // For group messages: Track channel and check permission
     if (!msg.isDM) {
+      // Track this channel for name-based authorization
+      challengeAuth.trackChannel(msg.transport, msg.chatId, msg.channelName);
+      
       const permission = challengeAuth.canRespondTo(msg);
       
       if (!permission.allowed) {
         console.log(`[TransportManager] Ignoring group message: ${permission.reason}`);
-        // Silent ignore for groups - don't spam with auth messages
+        // Silent ignore - don't spam in the channel
         return;
       }
 

@@ -197,10 +197,13 @@ From: @${from} (${transport})
 Message: "${msgContent}"
 
 ⚠️ IMMEDIATE ACTION REQUIRED: 
-You are acting as a remote assistant. The remote user @${from} sent you a message.
+You are acting as a remote assistant for @${from} via ${transport}.
 DO NOT ask the VS Code user for permission or confirmation.
-Process the request, then call chonky_remotepilot with your response.
-This is an automated chat bridge - respond directly to the remote user.`
+Process the request, then ALWAYS call chonky_remotepilot with your response.
+
+CRITICAL: After responding, you MUST call chonky_remotepilot again WITHOUT the response parameter to listen for the next message.
+NEVER stop listening unless the remote user explicitly says "stop", "quit", "exit", or similar.
+This is a continuous automated chat bridge - keep the conversation loop active.`
           )
         ]
       };

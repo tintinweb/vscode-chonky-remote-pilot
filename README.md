@@ -85,15 +85,17 @@ Once authenticated via DM, you become a **trusted user** and can:
 
 | Command | Description |
 |---------|-------------|
-| `enable #channel` | Enable a channel (default: mentions mode) |
-| `enable #channel all` | Bot responds to everyone |
-| `enable #channel mentions` | Bot responds when @mentioned |
-| `enable #channel trusted-only` | Only trusted users can interact |
-| `disable #channel` | Disable a channel |
+| `enable <channel>` | Enable a channel (default: mentions mode) |
+| `enable <channel> all` | Bot responds to everyone |
+| `enable <channel> mentions` | Bot responds when @mentioned |
+| `enable <channel> trusted-only` | Only trusted users can interact |
+| `disable <channel>` | Disable a channel |
 | `channels` | List enabled channels |
 | `trusted` | List all trusted users |
 | `revoke @user` | Remove a trusted user |
 | `help` | Show available commands |
+
+**Channel Reference:** Use channel name (e.g., `general`) or chat ID (e.g., `-1234567890`). The bot learns channel names from messages it sees.
 
 ### Group Chat Behavior
 
@@ -103,6 +105,57 @@ Once authenticated via DM, you become a **trusted user** and can:
 - **Trusted-only mode**: Only authenticated users can interact
 
 **Note:** You can connect multiple transports simultaneously - messages from any authenticated transport will be processed.
+
+## Troubleshooting
+
+### Telegram Bot Not Seeing Group Messages
+
+**CRITICAL:** By default, Telegram bots in groups only see messages that @mention them. You must disable privacy mode.
+
+#### Step 1: Disable Privacy Mode (Required!)
+
+1. Open Telegram and message [@BotFather](https://t.me/botfather)
+2. Send: `/mybots`
+3. Select your bot
+4. Click **Bot Settings**
+5. Click **Group Privacy**
+6. Click **Turn off** (it should show "Privacy mode is disabled")
+
+**Verify:** Send a test message in the group (without @mentioning the bot). Check VS Code Output panel (View → Output → select "Chonky RemotePilot"). You should see:
+```
+[Telegram] 📥 Received message in group "YourGroup" from @username: "test"
+```
+
+If you don't see this, privacy mode is still enabled or the bot isn't in the group.
+
+#### Step 2: Authenticate & Enable Channel
+
+1. **Authenticate first**: Send a DM to the bot and complete authentication
+
+2. **Add bot to the group** (if not already added)
+
+3. **Enable the channel**: In your DM with the bot, send:
+   ```
+   enable general all
+   ```
+   Or use the chat ID from logs:
+   ```
+   enable -1234567890 mentions
+   ```
+
+4. **Channel modes**:
+   - `all` - Bot responds to all messages
+   - `mentions` - Bot only responds when @mentioned (default)
+   - `trusted-only` - Only trusted users can interact
+
+**Quick Flow:**
+```
+1. (BotFather) Disable privacy mode for your bot
+2. (DM) Authenticate with bot
+3. (Group) Add bot to group
+4. (DM) enable general all
+5. (Group) Start chatting!
+```
 
 ## Commands
 

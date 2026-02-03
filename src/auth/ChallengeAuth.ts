@@ -62,6 +62,9 @@ export class ChallengeAuth {
   
   // Session-only: channel authorizations (reset on restart)
   private authorizedChannels: Map<string, AuthorizedChannel> = new Map();  // Key: transport:channelId
+  
+  // Channel discovery: map channel names to IDs (session-only)
+  private seenChannels: Map<string, { channelId: string; channelName: string }> = new Map();  // Key: transport:channelName (lowercase)
 
   // Persistence
   private secretStorage: vscode.SecretStorage | null = null;
@@ -327,6 +330,38 @@ export class ChallengeAuth {
   getAuthorizedChannels(transport: string): AuthorizedChannel[] {
     return Array.from(this.authorizedChannels.values())
       .filter(c => c.transport === transport);
+  }
+
+  /**
+   * Track a channel we've seen (for name-based authorization)
+   */
+  trackChannel(transport: string, channelId: string, channelName?: string): void {
+    if (!channelName) {
+      return;
+    }
+    const key = this.makeKey(transport, channelName.toLowerCase());
+    this.seenChannels.set(key, { channelId, channelName });
+  }
+
+  /**
+   * Find channel ID by name
+   */
+  findChannelByName(transport: string, channelName: string): { channelId: string; channelName: string } | undefined {
+    // Try exact match first
+    let key = this.makeKey(transport, channelName.toLowerCase());
+    let channel = this.seenChannels.get(key);
+    if (channel) {
+      return channel;
+    }
+    
+    // Try partial match (e.g., "general" matches "#general")
+    for (const [k, ch] of this.seenChannels) {
+      if (k.startsWith(`${transport}:`) && ch.channelName.toLowerCase().includes(channelName.toLowerCase())) {
+        return ch;
+      }
+    }
+    
+    return undefined;
   }
 
   // ─────────────────────────────────────────────────────────────
