@@ -3,7 +3,7 @@
   "displayName": "🧑‍✈️🍣 Chonky RemotePilot",
   "publisher": "tintinweb",
   "description": "Multi-transport chat bridge for VS Code Chat - Control your AI assistant remotely via Telegram, WhatsApp, Slack, or Discord",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "preview": true,
   "license": "MIT",
   "icon": "img/chonky-remote-pilot-icon.jpg",
